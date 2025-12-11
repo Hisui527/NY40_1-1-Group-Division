@@ -1,0 +1,132 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Python Runner (Pyodide) — Koder</title>
+  <style>
+    body{font-family:system-ui,-apple-system,Segoe UI,Roboto,"Hiragino Kaku Gothic ProN","Yu Gothic",sans-serif;margin:0;padding:16px;background:#f6f7fb;color:#111}
+    textarea{width:100%;box-sizing:border-box;font-family:monospace;font-size:13px;padding:8px;border:1px solid #ccc;border-radius:6px;resize:vertical}
+    button{padding:8px 12px;border-radius:6px;border:1px solid #2b6cb0;background:#3182ce;color:white;cursor:pointer;margin-right:8px;margin-top:8px}
+    #output{white-space:pre-wrap;background:#0b1220;color:#d7e8ff;padding:12px;border-radius:6px;min-height:200px;border:1px solid #09121a;overflow:auto;margin-top:12px}
+  </style>
+</head>
+<body>
+  <h1>Python 実行（Pyodide）</h1>
+
+  <p>コードは初期状態で保存されています。Run を押すだけで実行できます。</p>
+
+  <label>Python コード</label>
+  <textarea id="python" rows="25">
+import random
+L = list(range(1,40))
+random.shuffle(L)
+group = []
+meibo = ["秋山","新．","阿部","粟野","井元","岩井","太佐","岡．","岡本","金子","木村","小池","齋藤","勝賀","銭谷","髙瀬","都築","出口","長瀬","仲田","成田","南部","西谷","長谷","福本","藤井","藤田","藤原","渕上","松本","三浦","藪田","山形","山木","山田","山本","横井","芳林","脇田"]
+for i in range(9):
+    group.append([meibo[num-1] for num in L[i*4:(i+1)*4]])
+i+=1
+group.append([meibo[num-1] for num in L[i*4:(i+1)*4 -1]])
+
+if input() == "group":
+    for i in range(10):
+        print(i+1,*group[i])
+else:
+    seat = [["．．"] * 6 for _ in range(7)]
+    for i in range(4):
+        seat[0][i+1] = group[0][i]
+    for i in range(9):
+        for j in range(4):
+            if j == 0:
+                seat[(i%3 +1) * 2 -1][(i//3)*2] = group[i+1][j]
+            elif j == 1:
+                seat[(i%3 +1) * 2][(i//3)*2] = group[i+1][j]
+            elif j == 2:
+                seat[(i%3 +1) * 2 -1][(i//3)*2 +1] = group[i+1][j]
+            elif j == 3 and i != 8:
+                seat[(i%3 +1) * 2][(i//3)*2 +1] = group[i+1][j]
+    for i in range(1,7):
+        seat[i].insert(2,"|")
+        seat[i].insert(5,"|")
+    for i in range(1,8,3):
+        seat.insert(i,["＿＿＿＿＿＿＿＿＿＿＿＿＿＿＿"])
+    seat[0].insert(2," ")
+    seat[0].insert(5," ")
+    for raw in seat:
+        print(*raw)
+  </textarea>
+
+  <br><br>
+
+  <label>標準入力（stdin）</label>
+  <textarea id="stdin" rows="6" placeholder="ここに input() 用の入力を書きます（複数行 OK）"></textarea>
+
+  <br>
+  <button id="run">Run</button>
+  <button id="clear">Clear Output</button>
+
+  <div id="output">[出力はここに表示されます]</div>
+
+  <!-- Pyodide 読み込み -->
+  <script src="https://cdn.jsdelivr.net/pyodide/v0.24.1/full/pyodide.js"></script>
+  <script>
+    let pyodideReady = false;
+    let pyodide = null;
+
+    async function loadPyodideAndPackages() {
+      output.textContent = "[初期化] Pyodide 読み込み中...\n";
+      pyodide = await loadPyodide({
+        indexURL: "https://cdn.jsdelivr.net/pyodide/v0.24.1/full/"
+      });
+      output.textContent += "[完了] 読み込み完了\n";
+      pyodideReady = true;
+    }
+
+    loadPyodideAndPackages();
+
+    run.onclick = async () => {
+      if (!pyodideReady) {
+        output.textContent += "Pyodide を読み込み中です。少し待ってください…\n";
+        return;
+      }
+      output.textContent = "";
+
+      const code = document.getElementById("python").value;
+      const stdinText = document.getElementById("stdin").value;
+
+      try {
+        const wrapped = `
+import sys
+from io import StringIO
+
+# --- stdin を設定 ---
+sys.stdin = StringIO(${JSON.stringify(stdinText)})
+
+# 出力キャプチャ
+_old_stdout = sys.stdout
+sys.stdout = StringIO()
+
+# --- User code start ---
+${code}
+# --- User code end ---
+
+result = sys.stdout.getvalue()
+
+# 戻す
+sys.stdout = _old_stdout
+result
+`;
+
+        const result = await pyodide.runPythonAsync(wrapped);
+        output.textContent += result;
+      } catch (e) {
+        output.textContent += "[エラー]\n" + e;
+      }
+    };
+
+    clear.onclick = () => {
+      output.textContent = "";
+    };
+  </script>
+</body>
+</html>
