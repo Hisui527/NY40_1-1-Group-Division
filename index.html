@@ -24,9 +24,9 @@ random.shuffle(L)
 group = []
 meibo = ["秋山","新","阿部","粟野","井元","岩井","太佐","岡","岡本","金子","木村","小池","齋藤","勝賀瀬","銭谷","髙瀬","都築","出口","長瀬","仲田","成田","南部","西谷","長谷川","福本","藤井","藤田","藤原","渕上","松本","三浦","藪田","山形","山木","山田","山本","横井","芳林","脇田"]
 for i in range(9):
-    group.append([meibo[num-1] for num in L[i*4:(i+1)*4]])
+    group.append([meibo[num-1] for num in sorted(L[i*4:(i+1)*4])])
 i+=1
-group.append([meibo[num-1] for num in L[i*4:(i+1)*4 -1]])
+group.append([meibo[num-1] for num in sorted(L[i*4:(i+1)*4 -1])])
 
 if input() == "group":
     for i in range(10):
